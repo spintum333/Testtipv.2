@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tip Splitter">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
+<title>แบ่งทิป 4 รอบ</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-icon"><i class="fa-solid fa-coins"></i></div>
+    <div>
+      <h1 data-i18n="main-title">แบ่งทิป 4 รอบ</h1>
+      <p data-i18n="main-subtitle">คำนวณตามชั่วโมงทำงานจริง ไร้ทศนิยม</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="toggleDark()" id="dark-btn" title="สลับธีม">
+      <i class="fa-solid fa-moon" id="dark-icon"></i>
+    </button>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="lang-th" onclick="setLang('th')">ไทย</button>
+      <button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</header>
+
+<!-- ALERT -->
+<div id="alert-box">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  <div>
+    <strong id="alert-title">คำเตือน</strong>
+    <span id="alert-desc"></span>
+  </div>
+</div>
+
+<!-- TABS -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('tab-staff')" id="btn-tab-staff" data-i18n="tab-staff">👥 จำนวนคน</button>
+  <button class="tab-btn" onclick="showTab('tab-cash')" id="btn-tab-cash" data-i18n="tab-cash">💰 ยอดเงิน</button>
+  <button class="tab-btn" onclick="showTab('tab-result')" id="btn-tab-result" data-i18n="tab-result">📊 ผลการแบ่ง</button>
+  <button class="tab-btn" onclick="showTab('tab-history')" id="btn-tab-history" data-i18n="tab-history">📋 ประวัติ</button>
+  <button class="tab-btn" onclick="showTab('tab-theory')" id="btn-tab-theory" data-i18n="tab-theory">❓ วิธีคิด</button>
+</nav>
+
+<!-- TAB: STAFF -->
+<div class="tab-pane active" id="tab-staff">
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-user-gear"></i><span data-i18n="title-staff-setup">ตั้งค่าจำนวนคนเข้างาน</span></div>
+
+    <!-- Morning -->
+    <div class="staff-row">
+      <div class="staff-info">
+        <div class="staff-name">
+          🌅 <span data-i18n="shift-morning">กะเช้า (07:30–16:30)</span>
+          <button class="lock-btn" id="lock-btn-m" onclick="toggleLock('m')" title="ล็อก">
+            <i class="fa-solid fa-lock-open" id="lock-icon-m"></i>
+          </button>
+        </div>
+        <div class="staff-hrs" data-i18n="hrs-9">9 ชม./คน</div>
+      </div>
+      <div class="staff-counter">
+        <button class="counter-btn" id="btn-sub-m" onclick="changeCount('m',-1)">−</button>
+        <input type="number" class="counter-num" id="staff-m" value="4" min="0" inputmode="numeric" oninput="onStaffInput()">
+        <button class="counter-btn" id="btn-add-m" onclick="changeCount('m',1)">+</button>
+      </div>
+    </div>
+
+    <!-- Midday -->
+    <div class="staff-row">
+      <div class="staff-info">
+        <div class="staff-name">
+          ☀️ <span data-i18n="shift-midday">กะกลางวัน (09:00–18:00)</span>
+          <button class="lock-btn" id="lock-btn-mid" onclick="toggleLock('mid')" title="ล็อก">
+            <i class="fa-solid fa-lock-open" id="lock-icon-mid"></i>
+          </button>
+        </div>
+        <div class="staff-hrs" data-i18n="hrs-9">9 ชม./คน</div>
+      </div>
+      <div class="staff-counter">
+        <button class="counter-btn" id="btn-sub-mid" onclick="changeCount('mid',-1)">−</button>
+        <input type="number" class="counter-num" id="staff-mid" value="2" min="0" inputmode="numeric" oninput="onStaffInput()">
+        <button class="counter-btn" id="btn-add-mid" onclick="changeCount('mid',1)">+</button>
+      </div>
+    </div>
+
+    <!-- Night -->
+    <div class="staff-row">
+      <div class="staff-info">
+        <div class="staff-name">
+          🌃 <span data-i18n="shift-night">กะบ่าย (15:00–00:00)</span>
+          <button class="lock-btn" id="lock-btn-n" onclick="toggleLock('n')" title="ล็อก">
+            <i class="fa-solid fa-lock-open" id="lock-icon-n"></i>
+          </button>
+        </div>
+        <div class="staff-hrs" data-i18n="hrs-9">9 ชม./คน</div>
+      </div>
+      <div class="staff-counter">
+        <button class="counter-btn" id="btn-sub-n" onclick="changeCount('n',-1)">−</button>
+        <input type="number" class="counter-num" id="staff-n" value="3" min="0" inputmode="numeric" oninput="onStaffInput()">
+        <button class="counter-btn" id="btn-add-n" onclick="changeCount('n',1)">+</button>
+      </div>
+    </div>
+
+    <!-- Part-time -->
+    <div class="staff-row">
+      <div class="staff-info">
+        <div class="staff-name">⏱️ <span data-i18n="shift-pt">พาร์ทไทม์ (18:00–00:00)</span></div>
+        <div class="staff-hrs" data-i18n="hrs-6">6 ชม./คน</div>
+      </div>
+      <div class="staff-counter">
+        <button class="counter-btn" id="btn-sub-pt" onclick="changeCount('pt',-1)">−</button>
+        <input type="number" class="counter-num" id="staff-pt" value="0" min="0" inputmode="numeric" oninput="onStaffInput()">
+        <button class="counter-btn" id="btn-add-pt" onclick="changeCount('pt',1)">+</button>
+      </div>
+    </div>
+
+    <!-- Special shift -->
+    <div class="staff-row" id="special-shift-row" style="border:1.5px dashed var(--indigo);background:var(--indigo-light)">
+      <div class="staff-info">
+        <div class="staff-name">⭐ <span data-i18n="shift-sp">กะพิเศษ</span></div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap">
+          <input type="time" id="sp-start" value="11:00" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;color:var(--text);font-family:'Prompt',sans-serif" oninput="onStaffInput()">
+          <span style="font-size:12px;color:var(--muted)">–</span>
+          <input type="time" id="sp-end" value="00:00" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;color:var(--text);font-family:'Prompt',sans-serif" oninput="onStaffInput()">
+          <span id="sp-hrs" style="font-size:11px;color:var(--muted)">13 ชม./คน</span>
+        </div>
+      </div>
+      <div class="staff-counter">
+        <button class="counter-btn" id="btn-sub-sp" onclick="changeCount('sp',-1)">−</button>
+        <input type="number" class="counter-num" id="staff-sp" value="0" min="0" inputmode="numeric" oninput="onStaffInput()">
+        <button class="counter-btn" id="btn-add-sp" onclick="changeCount('sp',1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; padding: 8px 0;">
+    <button class="btn btn-primary" style="width:100%; max-width:400px;" onclick="showTab('tab-cash')" data-i18n="btn-next-cash">ถัดไป: กรอกยอดเงิน →</button>
+  </div>
+</div>
+
+<!-- TAB: CASH -->
+<div class="tab-pane" id="tab-cash">
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-vault"></i><span data-i18n="title-cash">บันทึกยอดในกล่องทิป</span></div>
+
+    <!-- 15:00 -->
+    <div class="cash-input-group">
+      <div class="cash-label">
+        <span class="dot" style="background:#059669"></span>
+        <span data-i18n="label-1500">1. ยอดในกล่อง เวลา 15:00 น. (บาท)</span>
+      </div>
+      <div class="cash-input-wrap">
+        <span>฿</span>
+        <input type="number" class="cash-input" id="input-1500" placeholder="0" inputmode="decimal" oninput="recalc()">
+      </div>
+      <div class="cash-hint" data-i18n="hint-1500">นับทั้งหมดในกล่องตอน 15:00 น. ก่อนกะบ่ายเริ่มงาน</div>
+    </div>
+
+    <!-- 16:30 -->
+    <div class="cash-input-group">
+      <div class="cash-label">
+        <span class="dot" style="background:#2563eb"></span>
+        <span data-i18n="label-1630">2. ยอดในกล่อง เวลา 16:30 น. (บาท)</span>
+      </div>
+      <div class="cash-input-wrap">
+        <span>฿</span>
+        <input type="number" class="cash-input" id="input-1630" placeholder="0" inputmode="decimal" oninput="recalc()">
+      </div>
+      <div class="cash-hint" data-i18n="hint-1630">นับก่อนจ่ายส่วนแบ่งให้กะเช้ากลับบ้าน</div>
+    </div>
+
+    <!-- 18:00 -->
+    <div class="cash-input-group">
+      <div class="cash-label">
+        <span class="dot" style="background:#7c3aed"></span>
+        <span data-i18n="label-1800">3. ยอดในกล่อง เวลา 18:00 น. (บาท)</span>
+      </div>
+      <div class="cash-input-wrap">
+        <span>฿</span>
+        <input type="number" class="cash-input" id="input-1800" placeholder="0" inputmode="decimal" oninput="recalc()">
+      </div>
+      <div class="cash-hint" data-i18n="hint-1800">นับก่อนจ่ายส่วนแบ่งให้กะกลางวันกลับบ้าน</div>
+    </div>
+
+    <!-- 00:00 -->
+    <div class="cash-input-group">
+      <div class="cash-label">
+        <span class="dot" style="background:#ea580c"></span>
+        <span data-i18n="label-0000">4. ยอดในกล่อง เวลา 00:00 น. (บาท)</span>
+      </div>
+      <div class="cash-input-wrap">
+        <span>฿</span>
+        <input type="number" class="cash-input" id="input-0000" placeholder="0" inputmode="decimal" oninput="recalc()">
+      </div>
+      <div class="cash-hint" data-i18n="hint-0000">นับทั้งหมดก่อนปิดร้านตอนเที่ยงคืน</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="clearCash()" data-i18n="btn-clear">ล้างฟอร์ม</button>
+      <button class="btn btn-primary" onclick="showTab('tab-result')" data-i18n="btn-see-result">ดูผลการแบ่ง</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: RESULT -->
+<div class="tab-pane" id="tab-result">
+  <div class="card">
+    <div class="card-title">
+      <i class="fa-solid fa-hand-holding-dollar"></i>
+      <span data-i18n="title-payout">เงินทิปรายคน</span>
+      <span style="margin-left:auto; font-size:11px; padding:3px 8px; border-radius:100px; background:var(--indigo-light); color:var(--indigo); font-weight:600;" data-i18n="clean-badge">ไม่มีเศษ</span>
+    </div>
+
+    <div class="result-grid">
+      <!-- Morning -->
+      <div class="result-card morning">
+        <div class="result-card-header" data-i18n="card-m">🌅 กะเช้า (เลิก 16:30)</div>
+        <div class="result-card-pax" id="cnt-m">ทำงาน: 4 คน</div>
+        <div class="result-card-amount" id="res-m">฿0</div>
+        <div class="result-card-total">
+          <span data-i18n="label-total">รวมกะ:</span>
+          <span id="res-total-m">฿0</span>
+        </div>
+      </div>
+      <!-- Midday -->
+      <div class="result-card midday">
+        <div class="result-card-header" data-i18n="card-mid">☀️ กะกลางวัน (เลิก 18:00)</div>
+        <div class="result-card-pax" id="cnt-mid">ทำงาน: 2 คน</div>
+        <div class="result-card-amount" id="res-mid">฿0</div>
+        <div class="result-card-total">
+          <span data-i18n="label-total">รวมกะ:</span>
+          <span id="res-total-mid">฿0</span>
+        </div>
+      </div>
+      <!-- Night -->
+      <div class="result-card night">
+        <div class="result-card-header" data-i18n="card-n">🌃 กะบ่าย (เลิก 00:00)</div>
+        <div class="result-card-pax" id="cnt-n">ทำงาน: 3 คน</div>
+        <div class="result-card-amount" id="res-n">฿0</div>
+        <div class="result-card-total">
+          <span data-i18n="label-total">รวมกะ:</span>
+          <span id="res-total-n">฿0</span>
+        </div>
+      </div>
+      <!-- Part-time -->
+      <div class="result-card parttime">
+        <div class="result-card-header" data-i18n="card-pt">⏱️ พาร์ทไทม์ (เลิก 00:00)</div>
+        <div class="result-card-pax" id="cnt-pt">ทำงาน: 0 คน</div>
+        <div class="result-card-amount" id="res-pt">฿0</div>
+        <div class="result-card-total">
+          <span data-i18n="label-total">รวมกะ:</span>
+          <span id="res-total-pt">฿0</span>
+        </div>
+      </div>
+      <!-- Special -->
+      <div class="result-card" id="res-card-sp" style="background:var(--indigo-light);border-color:#a5b4fc;color:var(--indigo);display:none">
+        <div class="result-card-header">⭐ <span id="sp-card-label">กะพิเศษ</span></div>
+        <div class="result-card-pax" id="cnt-sp">ทำงาน: 0 คน</div>
+        <div class="result-card-amount" id="res-sp">฿0</div>
+        <div class="result-card-total" style="border-color:#a5b4fc">
+          <span data-i18n="label-total">รวมกะ:</span>
+          <span id="res-total-sp">฿0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <span data-i18n="label-total-earned">รวมทิปทั้งวัน:</span>
+      <span class="summary-val" id="stat-total">฿0</span>
+    </div>
+    <div class="summary-row">
+      <span data-i18n="label-leftover">เศษเงินในกล่อง:</span>
+      <span class="summary-val" id="stat-leftover">฿0</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="clearCash()" data-i18n="btn-clear">ล้างฟอร์ม</button>
+      <button class="btn btn-primary" onclick="saveToday()" data-i18n="btn-save">บันทึกวันนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: HISTORY -->
+<div class="tab-pane" id="tab-history">
+  <div class="card">
+    <div class="history-header">
+      <h3><i class="fa-solid fa-clock-rotate-left"></i><span data-i18n="history-title">ประวัติรายวัน</span></h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="clear-hist-btn" id="btn-export-csv" onclick="exportCSV()" style="color:var(--indigo)" data-i18n="btn-export-csv">⬇ Export CSV</button>
+        <button class="clear-hist-btn" onclick="confirmClear()" data-i18n="btn-clear-hist">ล้างประวัติ</button>
+      </div>
+    </div>
+    <div class="history-scroll">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th data-i18n="th-date">วันที่</th>
+            <th data-i18n="th-total">รวมทิป</th>
+            <th data-i18n="th-m">เช้า/คน</th>
+            <th data-i18n="th-mid">กลางวัน/คน</th>
+            <th data-i18n="th-n">บ่าย/คน</th>
+            <th data-i18n="th-pt">PT/คน</th>
+            <th data-i18n="th-sp">พิเศษ/คน</th>
+          </tr>
+        </thead>
+        <tbody id="hist-body">
+          <tr><td colspan="7" class="history-empty" data-i18n="history-empty">ยังไม่มีประวัติ</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: THEORY -->
+<div class="tab-pane" id="tab-theory">
+  <div class="card">
+    <div class="card-title"><i class="fa-solid fa-circle-question"></i><span data-i18n="theory-title">วิธีคิดเบื้องหลัง</span></div>
+    <p class="theory-desc" data-i18n="theory-desc">แอปนี้แบ่งทิปตามสัดส่วนชั่วโมงทำงานจริงในแต่ละช่วง (Time-Weighted Interval Model) แบ่งเป็น 4 ช่วงตามจุดที่กะทับซ้อนกัน เพื่อให้ทุกกะได้ส่วนแบ่งที่ยุติธรรม:</p>
+    <div class="theory-step">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title" data-i18n="t-step-1">ช่วงที่ 1: 07:30–15:00 น.</div>
+        <div class="step-desc" id="explain-1" data-i18n="t-desc-1">ทิปเป็นของกะเช้าและกะกลางวันเท่านั้น (ตามชั่วโมงจริง)</div>
+      </div>
+    </div>
+    <div class="theory-step">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title" data-i18n="t-step-2">ช่วงที่ 2: 15:00–16:30 น.</div>
+        <div class="step-desc" id="explain-2" data-i18n="t-desc-2">ทิปใหม่แบ่งให้ทั้ง 3 กะ: เช้า กลางวัน และบ่าย</div>
+      </div>
+    </div>
+    <div class="theory-step">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title" data-i18n="t-step-3">ช่วงที่ 3: 16:30–18:00 น.</div>
+        <div class="step-desc" id="explain-3" data-i18n="t-desc-3">ทิปใหม่แบ่งเฉพาะกะกลางวันและกะบ่าย (กะเช้าเลิกงานแล้ว)</div>
+      </div>
+    </div>
+    <div class="theory-step">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title" data-i18n="t-step-4">ช่วงที่ 4: 18:00–00:00 น.</div>
+        <div class="step-desc" id="explain-4" data-i18n="t-desc-4">ทิปที่เหลือเป็นของกะบ่ายและพาร์ทไทม์จนปิดร้าน</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <div class="modal-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <span class="modal-title" data-i18n="modal-title">ยืนยันการลบประวัติ</span>
+    </div>
+    <p class="modal-desc" data-i18n="modal-desc">ต้องการลบประวัติการบันทึกทั้งหมดหรือไม่? ไม่สามารถกู้คืนได้</p>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal()" data-i18n="btn-cancel">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="doClearHistory()" data-i18n="btn-confirm-delete">ยืนยันลบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><i class="fa-solid fa-circle-check"></i><span id="toast-text">สำเร็จ</span></div>
+
+<script src="calculator.js"></script>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>

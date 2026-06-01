@@ -1,0 +1,9 @@
+{
+  "name": "tip-splitter",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/calculator.test.js",
+    "check": "node --check app.js && node --check calculator.js"
+  }
+}

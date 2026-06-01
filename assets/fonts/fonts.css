@@ -1,0 +1,47 @@
+@font-face {
+  font-family: 'Sarabun';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('sarabun-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Sarabun';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('sarabun-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Sarabun';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('sarabun-700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('prompt-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('prompt-700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('prompt-800.ttf') format('truetype');
+}
