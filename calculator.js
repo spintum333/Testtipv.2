@@ -75,6 +75,7 @@
     ];
 
     const spUsesStandardPoint = Object.values(CHECKPOINTS).includes(spPayTime);
+    const spCanPay = staff.sp > 0 && (spUsesStandardPoint || Boolean(hasCash.spEnd));
     if (staff.sp > 0 && hasCash.spEnd && !spUsesStandardPoint) {
       cashPoints.push({
         key: 'spEnd',
@@ -103,7 +104,7 @@
       if (!paid.mid && 1080 <= tEnd) due.push('mid');
       if (!paid.n && 1440 <= tEnd) due.push('n');
       if (!paid.pt && 1440 <= tEnd) due.push('pt');
-      if (!paid.sp && staff.sp > 0 && spPayTime <= tEnd) due.push('sp');
+      if (!paid.sp && spCanPay && spPayTime <= tEnd) due.push('sp');
 
       if (!due.length) return currentBoxCash;
 
