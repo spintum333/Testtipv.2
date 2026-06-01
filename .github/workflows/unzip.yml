@@ -2,7 +2,7 @@ name: Unzip Project
 on:
   push:
     paths:
-      - 'tip-splitter.zip'
+      - 'tip-splitter.zip' # แก้เป็นชื่อไฟล์ของคุณแล้ว
 
 jobs:
   unzip:
@@ -13,8 +13,8 @@ jobs:
 
       - name: Unzip file
         run: |
-          unzip -o archive.zip -d ./
-          rm archive.zip
+          unzip -o tip-splitter.zip -d ./
+          rm tip-splitter.zip
 
       - name: Commit changes
         run: |
@@ -23,4 +23,3 @@ jobs:
           git add .
           git commit -m "Unzipped project files automatically" || exit 0
           git push
-          
