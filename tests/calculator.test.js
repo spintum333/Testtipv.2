@@ -156,3 +156,11 @@ test('pays out special shift at its own end time when cash is entered', () => {
   assert.deepEqual(result.payouts.sp, { per: 295, total: 295 });
   assert.deepEqual(result.alerts, []);
 });
+
+test('does not pay a nonstandard special shift until its end-time cash is entered', () => {
+  const result = calculateTips(baseInput({
+    staff: { sp: 1 },
+    special: { start: '11:00', end: '17:00' }
+  }));
+  assert.deepEqual(result.payouts.sp, { per: 0, total: 0 });
+});
