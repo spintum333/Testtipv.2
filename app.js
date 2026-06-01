@@ -18,6 +18,8 @@ const L = {
     "hint-1800":"นับก่อนจ่ายส่วนแบ่งให้กะกลางวันกลับบ้าน",
     "label-0000":"4. ยอดในกล่อง เวลา 00:00 น. (บาท)",
     "hint-0000":"นับทั้งหมดก่อนปิดร้านตอนเที่ยงคืน",
+    "label-sp-end-cash":"ยอดในกล่อง เวลา {time} น. (บาท)",
+    "hint-sp-end-cash":"นับก่อนจ่ายส่วนแบ่งให้กะพิเศษ",
     "btn-clear":"ล้างฟอร์ม","btn-see-result":"ดูผลการแบ่ง","btn-save":"บันทึกวันนี้",
     "title-payout":"เงินทิปรายคน","clean-badge":"ไม่มีเศษ",
     "card-m":"🌅 กะเช้า (เลิก 16:30)","card-mid":"☀️ กะกลางวัน (เลิก 18:00)",
@@ -43,6 +45,7 @@ const L = {
     "alert-1800-low":"ยอดเงิน 18:00 น. ไม่พอกับยอดที่ต้องจ่ายให้กะกลางวัน",
     "alert-0000-low":"ยอดเงินปิดร้านไม่พอแบ่งให้กะบ่ายและพาร์ทไทม์",
     "shift-sp":"กะพิเศษ",
+    "sp-card-meta":"({range}, จ่าย {payTime})",
     "pax":"ทำงาน: {n} คน",
     "toast-saved":"บันทึกยอดส่วนแบ่งทิปสำเร็จ!","toast-cleared":"ล้างฟอร์มสำเร็จ",
     "toast-hist-cleared":"ล้างประวัติสำเร็จ","toast-save-error":"กรุณากรอกยอดเงินก่อนบันทึก",
@@ -67,6 +70,8 @@ const L = {
     "hint-1800":"Count before paying out Midday shift",
     "label-0000":"4. Box total at 00:00 (Baht)",
     "hint-0000":"Count before closing — final box sweep",
+    "label-sp-end-cash":"Box total at {time} (Baht)",
+    "hint-sp-end-cash":"Count before paying out Special Shift",
     "btn-clear":"Clear","btn-see-result":"See Results","btn-save":"Save Today",
     "title-payout":"Per-Person Payouts","clean-badge":"No decimals",
     "card-m":"🌅 Morning (ends 16:30)","card-mid":"☀️ Midday (ends 18:00)",
@@ -92,6 +97,7 @@ const L = {
     "alert-1800-low":"18:00 cash too low to cover Midday shift payout",
     "alert-0000-low":"Closing cash cannot cover Afternoon and Part-Time payouts",
     "shift-sp":"Special Shift",
+    "sp-card-meta":"({range}, paid {payTime})",
     "pax":"Working: {n} pax",
     "toast-saved":"Saved today's tip record!","toast-cleared":"Form cleared",
     "toast-hist-cleared":"History cleared","toast-save-error":"Please enter cash amounts first",
@@ -119,18 +125,81 @@ function getSpHours() {
 function updateSpHrsLabel() {
   const hrs = getSpHours();
   const el = document.getElementById('sp-hrs');
-  if (el) el.textContent = `${hrs % 1 === 0 ? hrs : hrs.toFixed(1)} ชม./คน`;
+  if (el) {
+    const formattedHrs = hrs % 1 === 0 ? hrs : hrs.toFixed(1);
+    el.textContent = lang === 'th' ? `${formattedHrs} ชม./คน` : `${formattedHrs} hrs/person`;
+  }
+}
+
+function parseMinutes(value) {
+  if (!value) return 0;
+  const [hours, minutes] = value.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return 0;
+  if (hours === 0 && minutes === 0) return 1440;
+  return hours * 60 + minutes;
+}
+
+function getSpPayTime(startValue, endValue) {
+  const start = parseMinutes(startValue);
+  let end = parseMinutes(endValue);
+  if (end <= start) end += 1440;
+  return Math.min(end, 1440);
+}
+
+function formatMinutes(minutes) {
+  const normalized = minutes >= 1440 ? 0 : minutes;
+  const hours = Math.floor(normalized / 60);
+  const mins = normalized % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+function spNeedsOwnCashPoint(startValue, endValue, staffCount) {
+  if (staffCount <= 0) return false;
+  const payTime = getSpPayTime(startValue, endValue);
+  return ![900, 990, 1080, 1440].includes(payTime);
+}
+
+function updateSpEndCashInput(staffCount) {
+  const startEl = document.getElementById('sp-start');
+  const endEl = document.getElementById('sp-end');
+  const group = document.getElementById('sp-end-cash-group');
+  const label = document.getElementById('label-sp-end-cash');
+  const hint = document.getElementById('hint-sp-end-cash');
+  if (!startEl || !endEl || !group || !label || !hint) return;
+
+  const shouldShow = spNeedsOwnCashPoint(startEl.value, endEl.value, staffCount);
+  group.style.display = shouldShow ? '' : 'none';
+
+  const payTime = formatMinutes(getSpPayTime(startEl.value, endEl.value));
+  label.textContent = L[lang]['label-sp-end-cash'].replace('{time}', payTime);
+  hint.textContent = L[lang]['hint-sp-end-cash'];
+}
+
+function updateSpCardMeta() {
+  const startEl = document.getElementById('sp-start');
+  const endEl = document.getElementById('sp-end');
+  const timeEl = document.getElementById('sp-card-time');
+  if (!startEl || !endEl || !timeEl) return;
+
+  const range = `${startEl.value}–${endEl.value}`;
+  const payTime = formatMinutes(getSpPayTime(startEl.value, endEl.value));
+  timeEl.textContent = L[lang]['sp-card-meta']
+    .replace('{range}', range)
+    .replace('{payTime}', payTime);
 }
 
 // ── LANG ───────────────────────────────────────────────────────────────────
 function setLang(l) {
   lang = l;
+  document.documentElement.lang = l;
+  document.title = L[l]['main-title'];
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const k = el.getAttribute('data-i18n');
     if (L[l][k] !== undefined) el.textContent = L[l][k];
   });
   document.getElementById('lang-th').classList.toggle('active', l === 'th');
   document.getElementById('lang-en').classList.toggle('active', l === 'en');
+  updateSpHrsLabel();
   recalc();
   renderHistory();
 }
@@ -236,13 +305,11 @@ function recalc() {
   const spCard = document.getElementById('res-card-sp');
   if (spCard) spCard.style.display = sSP > 0 ? 'flex' : 'none';
 
-  // Update special shift card label with time range
+  // Update special shift card label with time range and payout checkpoint.
   const spStartEl = document.getElementById('sp-start');
   const spEndEl   = document.getElementById('sp-end');
-  const spLabel   = document.getElementById('sp-card-label');
-  if (spLabel && spStartEl && spEndEl) {
-    spLabel.textContent = `${spStartEl.value}–${spEndEl.value === '00:00' ? '00:00' : spEndEl.value}`;
-  }
+  updateSpEndCashInput(sSP);
+  updateSpCardMeta();
 
   // Update pax labels
   const paxTpl = L[lang]['pax'];
@@ -275,13 +342,15 @@ function recalc() {
       '1500': getCash('1500'),
       '1630': getCash('1630'),
       '1800': getCash('1800'),
-      '0000': getCash('0000')
+      '0000': getCash('0000'),
+      spEnd: getCash('sp-end')
     },
     hasCash: {
       '1500': hasCash('1500'),
       '1630': hasCash('1630'),
       '1800': hasCash('1800'),
-      '0000': hasCash('0000')
+      '0000': hasCash('0000'),
+      spEnd: hasCash('sp-end') && spNeedsOwnCashPoint(spStartEl?.value || '11:00', spEndEl?.value || '00:00', sSP)
     },
     special: {
       start: spStartEl?.value || '11:00',
@@ -323,7 +392,7 @@ function hideAlert() {
 
 // ── CLEAR CASH ─────────────────────────────────────────────────────────────
 function clearCash() {
-  ['1500','1630','1800','0000'].forEach(id => {
+  ['1500','1630','1800','0000','sp-end'].forEach(id => {
     document.getElementById('input-' + id).value = '';
   });
   // Unlock all locks

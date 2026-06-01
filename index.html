@@ -196,6 +196,19 @@
       <div class="cash-hint" data-i18n="hint-1800">นับก่อนจ่ายส่วนแบ่งให้กะกลางวันกลับบ้าน</div>
     </div>
 
+    <!-- Special shift end -->
+    <div class="cash-input-group" id="sp-end-cash-group" style="display:none">
+      <div class="cash-label">
+        <span class="dot" style="background:#4f46e5"></span>
+        <span id="label-sp-end-cash">ยอดในกล่อง เวลากะพิเศษจบ (บาท)</span>
+      </div>
+      <div class="cash-input-wrap">
+        <span>฿</span>
+        <input type="number" class="cash-input" id="input-sp-end" placeholder="0" inputmode="decimal" oninput="recalc()">
+      </div>
+      <div class="cash-hint" id="hint-sp-end-cash">นับก่อนจ่ายส่วนแบ่งให้กะพิเศษ</div>
+    </div>
+
     <!-- 00:00 -->
     <div class="cash-input-group">
       <div class="cash-label">
@@ -268,7 +281,7 @@
       </div>
       <!-- Special -->
       <div class="result-card" id="res-card-sp" style="background:var(--indigo-light);border-color:#a5b4fc;color:var(--indigo);display:none">
-        <div class="result-card-header">⭐ <span id="sp-card-label">กะพิเศษ</span></div>
+        <div class="result-card-header">⭐ <span id="sp-card-title" data-i18n="shift-sp">กะพิเศษ</span> <span id="sp-card-time" style="font-size:0.9em;opacity:0.85"></span></div>
         <div class="result-card-pax" id="cnt-sp">ทำงาน: 0 คน</div>
         <div class="result-card-amount" id="res-sp">฿0</div>
         <div class="result-card-total" style="border-color:#a5b4fc">

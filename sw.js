@@ -1,5 +1,5 @@
 // Service Worker — แคชไฟล์ทั้งหมดเพื่อใช้ offline ได้
-const CACHE_NAME = 'tip-splitter-v9';
+const CACHE_NAME = 'tip-splitter-v11';
 const ASSETS = [
   './index.html',
   './assets/fonts/fonts.css',

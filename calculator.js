@@ -5,7 +5,13 @@
     root.calculateTips = factory();
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const CHECKPOINTS = [450, 900, 990, 1080, 1440];
+  const CHECKPOINTS = {
+    open: 450,
+    '1500': 900,
+    '1630': 990,
+    '1800': 1080,
+    '0000': 1440
+  };
 
   function parseTime(value, fallback) {
     const source = value || fallback;
@@ -29,6 +35,16 @@
     };
   }
 
+  function normalizeCash(value) {
+    return Math.max(0, Number(value) || 0);
+  }
+
+  function alertForPayoutTime(time) {
+    if (time <= 990) return 'alert-1630-deficit';
+    if (time <= 1080) return 'alert-1800-low';
+    return 'alert-0000-low';
+  }
+
   function calculateTips(input = {}) {
     const staff = {
       m: Math.max(0, Number(input.staff?.m) || 0),
@@ -44,47 +60,90 @@
     const spStart = parseTime(input.special?.start, '11:00');
     let spEnd = parseTime(input.special?.end, '00:00');
     if (spEnd <= spStart) spEnd += 1440;
+    const spPayTime = Math.min(spEnd, 1440);
 
     function spOverlap(from, to) {
       return Math.max(0, Math.min(to, spEnd) - Math.max(from, spStart)) / 60;
     }
 
-    const boxCash = [
-      0,
-      Math.max(0, Number(cash['1500']) || 0),
-      Math.max(0, Number(cash['1630']) || 0),
-      Math.max(0, Number(cash['1800']) || 0),
-      Math.max(0, Number(cash['0000']) || 0)
-    ];
-    const boxHas = [
-      true,
-      Boolean(hasCash['1500']),
-      Boolean(hasCash['1630']),
-      Boolean(hasCash['1800']),
-      Boolean(hasCash['0000'])
+    const cashPoints = [
+      { key: 'open', time: CHECKPOINTS.open, cash: 0, hasCash: true },
+      { key: '1500', time: CHECKPOINTS['1500'], cash: normalizeCash(cash['1500']), hasCash: Boolean(hasCash['1500']) },
+      { key: '1630', time: CHECKPOINTS['1630'], cash: normalizeCash(cash['1630']), hasCash: Boolean(hasCash['1630']) },
+      { key: '1800', time: CHECKPOINTS['1800'], cash: normalizeCash(cash['1800']), hasCash: Boolean(hasCash['1800']) },
+      { key: '0000', time: CHECKPOINTS['0000'], cash: normalizeCash(cash['0000']), hasCash: Boolean(hasCash['0000']) }
     ];
 
-    const enteredIndices = [];
-    for (let i = 0; i < boxHas.length; i++) {
-      if (boxHas[i]) enteredIndices.push(i);
+    const spUsesStandardPoint = Object.values(CHECKPOINTS).includes(spPayTime);
+    if (staff.sp > 0 && hasCash.spEnd && !spUsesStandardPoint) {
+      cashPoints.push({
+        key: 'spEnd',
+        time: spPayTime,
+        cash: normalizeCash(cash.spEnd),
+        hasCash: true
+      });
     }
 
-    if (boxHas[2] && boxHas[1] && boxCash[2] < boxCash[1]) {
+    const enteredPoints = cashPoints
+      .filter(point => point.hasCash)
+      .sort((a, b) => a.time - b.time);
+
+    if (hasCash['1630'] && hasCash['1500'] && normalizeCash(cash['1630']) < normalizeCash(cash['1500'])) {
       alerts.push('alert-1630-low');
     }
 
     const purses = { m: 0, mid: 0, n: 0, pt: 0, sp: 0 };
     const paid = { m: false, mid: false, n: false, pt: false, sp: false };
     const payouts = createEmptyPayouts();
-    const boxAfter = [0, 0, 0, 0, 0];
+    const boxAfter = { open: 0 };
 
-    for (let k = 0; k < enteredIndices.length - 1; k++) {
-      const startIdx = enteredIndices[k];
-      const endIdx = enteredIndices[k + 1];
-      const tStart = CHECKPOINTS[startIdx];
-      const tEnd = CHECKPOINTS[endIdx];
-      const cashStartAfter = boxAfter[startIdx];
-      const cashEndBefore = boxCash[endIdx];
+    function payDue(currentBoxCash, tEnd) {
+      const due = [];
+      if (!paid.m && 990 <= tEnd) due.push('m');
+      if (!paid.mid && 1080 <= tEnd) due.push('mid');
+      if (!paid.n && 1440 <= tEnd) due.push('n');
+      if (!paid.pt && 1440 <= tEnd) due.push('pt');
+      if (!paid.sp && staff.sp > 0 && spPayTime <= tEnd) due.push('sp');
+
+      if (!due.length) return currentBoxCash;
+
+      const per = {};
+      const total = {};
+      let payoutTotal = 0;
+      due.forEach(shift => {
+        per[shift] = staff[shift] > 0 ? Math.floor(purses[shift]) : 0;
+        total[shift] = per[shift] * staff[shift];
+        payoutTotal += total[shift];
+      });
+
+      if (payoutTotal > currentBoxCash) {
+        alerts.push(alertForPayoutTime(tEnd));
+        const totalStaff = due.reduce((sum, shift) => sum + staff[shift], 0);
+        const perAll = totalStaff > 0 ? Math.floor(currentBoxCash / totalStaff) : 0;
+        payoutTotal = 0;
+        due.forEach(shift => {
+          per[shift] = staff[shift] > 0 ? perAll : 0;
+          total[shift] = per[shift] * staff[shift];
+          payoutTotal += total[shift];
+        });
+      }
+
+      due.forEach(shift => {
+        payouts[shift].per = per[shift];
+        payouts[shift].total = total[shift];
+        paid[shift] = true;
+      });
+
+      return Math.max(0, currentBoxCash - payoutTotal);
+    }
+
+    for (let k = 0; k < enteredPoints.length - 1; k++) {
+      const startPoint = enteredPoints[k];
+      const endPoint = enteredPoints[k + 1];
+      const tStart = startPoint.time;
+      const tEnd = endPoint.time;
+      const cashStartAfter = boxAfter[startPoint.key] || 0;
+      const cashEndBefore = endPoint.cash;
       const earned = Math.max(0, cashEndBefore - cashStartAfter);
 
       const overlapM = overlap(450, 990, tStart, tEnd);
@@ -103,92 +162,11 @@
         purses.sp += overlapSP * rate;
       }
 
-      let currentBoxCash = cashEndBefore;
-
-      if (!paid.m && 990 <= tEnd) {
-        const raw = staff.m > 0 ? Math.floor(purses.m) : 0;
-        let total = raw * staff.m;
-        let per = raw;
-        if (total > currentBoxCash) {
-          alerts.push('alert-1630-deficit');
-          total = currentBoxCash;
-          per = staff.m > 0 ? Math.floor(total / staff.m) : 0;
-          total = per * staff.m;
-        }
-        payouts.m.per = per;
-        payouts.m.total = total;
-        currentBoxCash = Math.max(0, currentBoxCash - total);
-        paid.m = true;
-      }
-
-      if (!paid.mid && 1080 <= tEnd) {
-        const raw = staff.mid > 0 ? Math.floor(purses.mid) : 0;
-        let total = raw * staff.mid;
-        let per = raw;
-        if (total > currentBoxCash) {
-          alerts.push('alert-1800-low');
-          total = currentBoxCash;
-          per = staff.mid > 0 ? Math.floor(total / staff.mid) : 0;
-          total = per * staff.mid;
-        }
-        payouts.mid.per = per;
-        payouts.mid.total = total;
-        currentBoxCash = Math.max(0, currentBoxCash - total);
-        paid.mid = true;
-      }
-
-      if (1440 <= tEnd) {
-        const needsN = !paid.n;
-        const needsPT = !paid.pt;
-        const needsSP = !paid.sp;
-
-        if (needsN || needsPT || needsSP) {
-          const rawN = needsN && staff.n > 0 ? Math.floor(purses.n) : 0;
-          const rawPT = needsPT && staff.pt > 0 ? Math.floor(purses.pt) : 0;
-          const rawSP = needsSP && staff.sp > 0 ? Math.floor(purses.sp) : 0;
-
-          let totalN = rawN * staff.n;
-          let totalPT = rawPT * staff.pt;
-          let totalSP = rawSP * staff.sp;
-          let perN = rawN;
-          let perPT = rawPT;
-          let perSP = rawSP;
-
-          if (totalN + totalPT + totalSP > currentBoxCash) {
-            alerts.push('alert-0000-low');
-            const totalStaff = (needsN ? staff.n : 0) + (needsPT ? staff.pt : 0) + (needsSP ? staff.sp : 0);
-            const perAll = totalStaff > 0 ? Math.floor(currentBoxCash / totalStaff) : 0;
-            if (needsN && staff.n > 0) { perN = perAll; totalN = perN * staff.n; }
-            if (needsPT && staff.pt > 0) { perPT = perAll; totalPT = perPT * staff.pt; }
-            if (needsSP && staff.sp > 0) { perSP = perAll; totalSP = perSP * staff.sp; }
-          }
-
-          if (needsN) {
-            payouts.n.per = perN;
-            payouts.n.total = totalN;
-            paid.n = true;
-            currentBoxCash = Math.max(0, currentBoxCash - totalN);
-          }
-          if (needsPT) {
-            payouts.pt.per = perPT;
-            payouts.pt.total = totalPT;
-            paid.pt = true;
-            currentBoxCash = Math.max(0, currentBoxCash - totalPT);
-          }
-          if (needsSP) {
-            payouts.sp.per = perSP;
-            payouts.sp.total = totalSP;
-            paid.sp = true;
-            currentBoxCash = Math.max(0, currentBoxCash - totalSP);
-          }
-        }
-      }
-
-      boxAfter[endIdx] = currentBoxCash;
+      boxAfter[endPoint.key] = payDue(cashEndBefore, tEnd);
     }
 
-    const lastEnteredIdx = enteredIndices[enteredIndices.length - 1];
-    const leftover = boxAfter[lastEnteredIdx];
+    const lastEnteredPoint = enteredPoints[enteredPoints.length - 1];
+    const leftover = boxAfter[lastEnteredPoint.key] || 0;
     const totalEarned = payouts.m.total + payouts.mid.total + payouts.n.total + payouts.pt.total + payouts.sp.total + leftover;
 
     return { payouts, leftover, totalEarned, alerts };
