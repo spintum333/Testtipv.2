@@ -127,3 +127,32 @@ test('flags closing cash that cannot cover computed final payouts', () => {
   assert.equal(result.payouts.sp.per, 0);
   assert.equal(result.totalEarned, 4062);
 });
+
+test('pays out special shift at 16:30 if it ends at or before 16:30', () => {
+  const result = calculateTips(baseInput({
+    staff: { sp: 1 },
+    special: { start: '11:00', end: '16:30' }
+  }));
+  assert.equal(result.payouts.sp.per, 126);
+  assert.equal(result.payouts.sp.total, 126);
+});
+
+test('pays out special shift at 18:00 if it ends at or before 18:00', () => {
+  const result = calculateTips(baseInput({
+    staff: { sp: 1 },
+    special: { start: '11:00', end: '18:00' }
+  }));
+  assert.equal(result.payouts.sp.per, 345);
+  assert.equal(result.payouts.sp.total, 345);
+});
+
+test('pays out special shift at its own end time when cash is entered', () => {
+  const result = calculateTips(baseInput({
+    staff: { sp: 1 },
+    cash: { spEnd: 1600 },
+    hasCash: { spEnd: true },
+    special: { start: '11:00', end: '17:00' }
+  }));
+  assert.deepEqual(result.payouts.sp, { per: 295, total: 295 });
+  assert.deepEqual(result.alerts, []);
+});
